@@ -1,5 +1,4 @@
 import sys
-import re
 
 kb = {
     'predicates': [],
@@ -9,6 +8,7 @@ kb = {
     'clauses': []
 }
 
+facts = {}
         
 class Predicate:
     def __init__(self, predicate, variables, negated=False):
@@ -49,6 +49,21 @@ def toPredicates(clause):
 
     return temp
 
+def evaluateClause(clause):
+    for predicate in clause:
+        negated = predicate.negated
+        found = False
+        for fact in kb['clauses']:
+            if predicate == fact and not negated:
+                found = True
+                break
+            elif predicate == fact and negated:
+                return False
+        if not found and negated:
+            return True
+    return True
+
+
 
 def main():
     with open(sys.argv[1], 'r') as file:
@@ -68,12 +83,28 @@ def main():
 
     tempClauses = []
 
-    for i in kb['clauses']:
-        tempClauses.append(toPredicates(i))
+    # convert all the predicates to Predicate objects
+    clauses = [toPredicates(c) for c in kb['clauses']]
+    kb['clauses'] = clauses
 
-    kb['clauses'] = tempClauses
+    for clause in clauses:
+        if len(clause) == 1:
+            predicate = clause[0]
+            if predicate.negated:
+                # if the fact is negated, we can just skip it
+                continue
+            factKey = predicate.predicate
+            
+            if factKey not in facts:
+                facts[factKey] = []
+            facts[factKey].extend(predicate.variables)
+            clauses.remove(clause)
+
+    print(facts)
+        
+
+
     
-    #print("yes" if runtimeLoop() else "no")
 
 if __name__ == '__main__':
     main()
